@@ -1,2 +1,2 @@
 # Ishisaka et al.
-[Figures 2 and 3](/Figures2and3/)
+[Figures 2 and 3](/Supplemental Figure 1.R/)
