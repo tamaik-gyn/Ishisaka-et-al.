@@ -1,0 +1,110 @@
+# ============================================================
+# Script: FigX_CD8_boxplot.R
+# Purpose: Boxplot of CD8 filtration vs log10(area_ROI)
+# Figure: Corresponding to Fig. X in the manuscript
+# Journal: Cell Reports Medicine
+# ============================================================
+
+# ==== 1. Load required packages ====
+suppressPackageStartupMessages({
+  library(ggplot2)
+  library(readxl)
+  library(dplyr)
+  library(FSA)
+  library(ggpubr)
+})
+
+# ==== 2. File paths (relative paths) ====
+input_excel <- "data/CD8_boxplot_data.xlsx"
+output_pdf_main <- "figure/FigX_CD8_boxplot.pdf"
+output_pdf_dunn <- "figure/FigX_CD8_boxplot_Dunn.pdf"
+
+# ==== 3. Load data ====
+df <- read_excel(input_excel)
+
+# ==== 4. Preprocessing ====
+df <- df %>%
+  mutate(
+    CD8_filtration = factor(CD8_filtration, levels = c("1", "2", "3")),
+    log10_area_ROI = log10(area_ROI)
+  )
+
+# ==== 5. Statistical tests ====
+# Overall comparison
+kruskal_res <- kruskal.test(log10_area_ROI ~ CD8_filtration, data = df)
+
+# Post hoc test (Dunn with Bonferroni correction)
+dunn_res <- dunnTest(
+  log10_area_ROI ~ CD8_filtration,
+  data   = df,
+  method = "bonferroni"
+)
+
+# ==== 6. Prepare Dunn test results for plotting ====
+dunn_df <- as.data.frame(dunn_res$res) %>%
+  select(Comparison, P.adj) %>%
+  mutate(
+    group1 = sub(" - .*", "", Comparison),
+    group2 = sub(".* - ", "", Comparison),
+    label = case_when(
+      P.adj < 0.001 ~ "***",
+      P.adj < 0.01  ~ "**",
+      P.adj < 0.05  ~ "*",
+      TRUE ~ ""
+    )
+  )
+
+# y-position for p-value annotation
+y_max <- max(df$log10_area_ROI, na.rm = TRUE)
+dunn_df$y.position <- y_max * c(1.05, 1.10, 1.15)
+
+# ==== 7. Color definition ====
+cd8_colors <- c(
+  "1" = "#325C9E",  # Absent
+  "2" = "#AFC3DD",  # Excluded
+  "3" = "#D45E5E"   # Infiltrated
+)
+
+# ==== 8. Boxplot ====
+p <- ggplot(df, aes(x = CD8_filtration, y = log10_area_ROI, fill = CD8_filtration)) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(width = 0.2, alpha = 0.8, size = 1.8) +
+  scale_fill_manual(values = cd8_colors) +
+  scale_x_discrete(labels = c("1" = "Absent", "2" = "Excluded", "3" = "Infiltrated")) +
+  xlab("CD8 infiltration status") +
+  ylab("log10(area_ROI)") +
+  theme_bw() +
+  theme(
+    text = element_text(size = 12, family = "Arial", color = "black"),
+    axis.text = element_text(size = 12),
+    axis.title = element_text(size = 12),
+    legend.position = "none"
+  )
+
+# ==== 9. Save main boxplot ====
+ggsave(
+  filename = output_pdf_main,
+  plot     = p,
+  width    = 100,
+  height   = 100,
+  units    = "mm",
+  device   = cairo_pdf
+)
+
+# ==== 10. Add Dunn test p-values ====
+p_dunn <- p +
+  stat_pvalue_manual(
+    dunn_df,
+    label = "label",
+    tip.length = 0.02
+  )
+
+# ==== 11. Save boxplot with statistical annotation ====
+ggsave(
+  filename = output_pdf_dunn,
+  plot     = p_dunn,
+  width    = 100,
+  height   = 100,
+  units    = "mm",
+  device   = cairo_pdf
+)
