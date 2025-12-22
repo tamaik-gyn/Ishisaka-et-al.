@@ -1,0 +1,178 @@
+# ============================================================
+# Script: Fig6A_oncoprint.R
+# Purpose: Generate the multi-layer oncoprint
+# Figure: Figure 6A
+# Journal: Cell Reports Medicine
+# ============================================================
+
+# ========== 1. Load libraries ==========
+suppressPackageStartupMessages({
+  library(readxl)
+  library(dplyr)
+  library(stringr)
+  library(ComplexHeatmap)
+  library(circlize)
+  library(grid)
+  library(showtext)
+})
+
+# ========== 2. File paths ==========
+input_excel <- "data/Fig6A_oncoprint_data.xlsx"
+output_pdf  <- "figure/Fig6A_oncoprint.pdf"
+
+if (!dir.exists("figure")) {
+  dir.create("figure", recursive = TRUE)
+}
+
+# ========== 3. Load data ==========
+dat0 <- read_excel(input_excel)
+
+needed <- c("sample_ID","Molecular_Subtype","CD8",
+            "HLA_I","HLA_A_BIS_target","B2M_LOH","HLA_A_LOH","Histology")
+stopifnot(all(needed %in% colnames(dat0)))
+
+dat <- dat0 %>% dplyr::select(dplyr::all_of(needed))
+
+# ========== 4. Clean white spaces ==========
+trim_all <- function(x) {
+  x <- gsub("\u3000", " ", x)
+  trimws(x)
+}
+dat <- dat %>% mutate(across(everything(), ~ trim_all(as.character(.))))
+
+# ========== 5. Normalize HLA-A methylation ==========
+dat <- dat %>%
+  mutate(
+    HLA_A_BIS_target = {
+      x <- str_to_lower(trimws(HLA_A_BIS_target))
+      dplyr::case_when(
+        x == "unmethylated" ~ "unmethylated",
+        x == "methylated"   ~ "methylated",
+        x == ""             ~ "N/A",
+        TRUE                ~ x
+      )
+    }
+  )
+
+# ========== 6. Normalize LOH notations ==========
+fix_loh <- function(x) {
+  x <- str_to_upper(trimws(x))
+  x[x %in% c("")] <- "N/A"
+  x[x %in% c("N.I.")] <- "N.I."
+  x
+}
+dat$B2M_LOH   <- fix_loh(dat$B2M_LOH)
+dat$HLA_A_LOH <- fix_loh(dat$HLA_A_LOH)
+
+# ========== 7. Factor levels ==========
+lvl_subtype <- c("POLE","MSI","p53abn","NSMP")
+lvl_cd8     <- c("Infiltrated","Excluded","Absent")
+lvl_hlaI    <- c("Positive","Heterogeneous","Negative")
+lvl_hlaAme  <- c("unmethylated","methylated","N/A")
+lvl_loh     <- c("ROH","LOH","N.I.","N/A")
+lvl_histo   <- c("EMG1/2","EMG3","Clear cell","Serous",
+                 "Carcinosarcoma","Mixed","Others")
+
+dat <- dat %>%
+  mutate(
+    Molecular_Subtype = factor(Molecular_Subtype, levels = lvl_subtype),
+    CD8               = factor(CD8,               levels = lvl_cd8),
+    HLA_I             = factor(HLA_I,             levels = lvl_hlaI),
+    HLA_A_BIS_target  = factor(HLA_A_BIS_target,  levels = lvl_hlaAme),
+    B2M_LOH           = factor(B2M_LOH,           levels = lvl_loh),
+    HLA_A_LOH         = factor(HLA_A_LOH,         levels = lvl_loh),
+    Histology         = factor(Histology,         levels = lvl_histo)
+  )
+
+# ========== 8. Sort data ==========
+dat <- dat %>%
+  arrange(Molecular_Subtype, CD8, HLA_I,
+          HLA_A_BIS_target, B2M_LOH, HLA_A_LOH, Histology)
+
+dat$sample_ID <- make.unique(
+  ifelse(is.na(dat$sample_ID) | dat$sample_ID == "",
+         paste0("S", seq_len(nrow(dat))), dat$sample_ID)
+)
+samples <- dat$sample_ID
+
+# ========== 9. Color palettes ==========
+col_subtype <- c("POLE"="#0072B2","MSI"="#009E73",
+                 "p53abn"="#c1393a","NSMP"="#F0E442")
+col_cd8 <- c("Absent"="#325C9E","Excluded"="#AFC3DD","Infiltrated"="#D45E5E")
+col_hlaI <- c("Positive"="#0072B2","Heterogeneous"="#E69F00","Negative"="#4D4D4D")
+col_hlaAme <- c("unmethylated"="#5B79A5","methylated"="#E69F00")
+col_loh <- c("ROH"="#7DBE3C","LOH"="#CC79A7","N.I."="#6F6F6F","N/A"="white")
+col_hist <- c("EMG1/2"="#009E73","EMG3"="#A6611A","Clear cell"="#CC79A7",
+              "Serous"="#0072B2","Carcinosarcoma"="#D55E00",
+              "Mixed"="#F0E442","Others"="#999999")
+
+# ========== 10. Convert rows to matrices ==========
+to_rowmat <- function(vec, nm) {
+  m <- matrix(as.character(vec), nrow = 1)
+  colnames(m) <- samples
+  rownames(m) <- nm
+  m
+}
+
+mat_list <- list(
+  to_rowmat(dat$Molecular_Subtype, "Molecular Subtype"),
+  to_rowmat(dat$CD8,               "CD8"),
+  to_rowmat(dat$HLA_I,             "HLA-I"),
+  to_rowmat(dat$HLA_A_BIS_target,  "HLA-A methylation"),
+  to_rowmat(dat$B2M_LOH,           "B2M LOH"),
+  to_rowmat(dat$HLA_A_LOH,         "HLA-A LOH"),
+  to_rowmat(dat$Histology,         "Histology")
+)
+
+cols <- list(
+  col_subtype, col_cd8, col_hlaI,
+  col_hlaAme, col_loh, col_loh, col_hist
+)
+
+# ========== 11. Heatmap function ==========
+cell_border <- "white"
+cell_lwd    <- unit(0.5, "pt")
+row_h       <- unit(6, "mm")
+gp_rowname  <- gpar(fontsize = 12, fontface = "bold", fontfamily = "Arial")
+
+ht_opt(
+  legend_title_gp  = gpar(fontsize = 11, fontfamily = "Arial"),
+  legend_labels_gp = gpar(fontsize = 10, fontfamily = "Arial"),
+  legend_gap       = unit(10, "mm")
+)
+
+make_ht <- function(mat, name, colmap) {
+  Heatmap(
+    mat, name = name, col = colmap,
+    cluster_rows = FALSE, cluster_columns = FALSE,
+    row_title = rownames(mat), row_title_rot = 0,
+    row_title_gp = gp_rowname,
+    show_row_names = FALSE, show_column_names = FALSE,
+    rect_gp = gpar(col = cell_border, lwd = cell_lwd),
+    height = row_h,
+    na_col = "white"
+  )
+}
+
+# ========== 12. Combine heatmaps ==========
+ht_all <- NULL
+for (i in seq_along(mat_list)) {
+  ht_all <- if (is.null(ht_all)) {
+    make_ht(mat_list[[i]], names(cols)[i], cols[[i]])
+  } else {
+    ht_all %v% make_ht(mat_list[[i]], names(cols)[i], cols[[i]])
+  }
+}
+
+# ========== 13. Output PDF ==========
+font_add("Arial", "/System/Library/Fonts/Supplemental/Arial.ttf")
+showtext_auto(enable = TRUE)
+
+cairo_pdf(output_pdf, width = 14, height = 5)
+draw(ht_all, heatmap_legend_side = "bottom", merge_legends = TRUE)
+dev.off()
+
+cat("Saved figure:", output_pdf, "\n")
+
+# ========== 14. Session info ==========
+sessionInfo()
