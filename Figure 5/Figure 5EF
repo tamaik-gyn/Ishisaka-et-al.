@@ -1,0 +1,131 @@
+# ============================================================
+# Script: Fig6X_LOH_CD8_stacked_bar.R
+# Purpose: Stacked bar plots of CD8 infiltration by LOH status (HLA-A and B2M)
+# Figure: Corresponding to Fig. 6 (panel X)
+# Journal: Cell Reports Medicine
+# ============================================================
+
+# ==== 1. Load required packages ====
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(ggplot2)
+  library(readxl)
+  library(stringr)
+})
+
+# ==== 2. File paths (relative paths) ====
+input_excel   <- "data/LOH_data.xlsx"
+output_pdf_A  <- "figure/Fig6X_LOH_HLA_A_CD8_stacked.pdf"
+output_pdf_B2M <- "figure/Fig6X_LOH_B2M_CD8_stacked.pdf"
+
+# ==== 3. Load data ====
+df <- read_excel(input_excel)
+
+# ==== 4. Normalize LOH labels and CD8 categories ====
+df <- df %>%
+  mutate(
+    HLA_A_LOH     = ifelse(HLA_A_LOH == "Ret", "ROH", HLA_A_LOH),
+    B2M_7loci_LOH = ifelse(B2M_7loci_LOH == "Ret", "ROH", B2M_7loci_LOH),
+    CD8_group = case_when(
+      CD8_Infiltration == 1 ~ "Absent",
+      CD8_Infiltration == 2 ~ "Excluded",
+      CD8_Infiltration == 3 ~ "Infiltrated",
+      TRUE ~ NA_character_
+    )
+  )
+
+cd8_levels <- c("Infiltrated", "Excluded", "Absent")
+
+# ==== 5. Color definition ====
+col_cd8 <- c(
+  "Infiltrated" = "#D45E5E",
+  "Excluded"    = "#AFC3DD",
+  "Absent"      = "#325C9E"
+)
+
+# ==== 6. Function to generate stacked bar plot ====
+make_barplot_cd8 <- function(df, loh_col, xlab_text) {
+  
+  df_plot <- df %>%
+    filter(.data[[loh_col]] %in% c("ROH", "LOH")) %>%
+    mutate(
+      LOH_status = factor(.data[[loh_col]], levels = c("ROH", "LOH")),
+      CD8_group  = factor(CD8_group, levels = cd8_levels)
+    ) %>%
+    count(LOH_status, CD8_group) %>%
+    group_by(LOH_status) %>%
+    mutate(frac = n / sum(n)) %>%
+    ungroup()
+  
+  ggplot(df_plot, aes(x = LOH_status, y = frac, fill = CD8_group)) +
+    geom_col(
+      color = "black",
+      linewidth = 0.2,
+      width = 0.65
+    ) +
+    scale_fill_manual(values = col_cd8, name = "CD8") +
+    scale_y_continuous(expand = c(0, 0), limits = c(0, 1)) +
+    scale_x_discrete(expand = c(0.15, 0)) +
+    xlab(xlab_text) +
+    ylab("") +
+    theme_bw() +
+    theme(
+      text       = element_text(family = "Arial", size = 12),
+      axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+      legend.key.size   = unit(3, "mm"),
+      legend.text       = element_text(size = 9),
+      legend.title      = element_text(size = 9),
+      legend.spacing.y  = unit(0.5, "mm"),
+      legend.box.margin = margin(0, 0, 0, 0)
+    )
+}
+
+# ==== 7. Generate plots ====
+p_A_cd8   <- make_barplot_cd8(df, "HLA_A_LOH", "HLA-A LOH")
+p_B2M_cd8 <- make_barplot_cd8(df, "B2M_7loci_LOH", "B2M LOH")
+
+# ==== 8. Save figures ====
+ggsave(
+  filename = output_pdf_A,
+  plot     = p_A_cd8,
+  width    = 52,
+  height   = 95,
+  units    = "mm",
+  device   = cairo_pdf
+)
+
+ggsave(
+  filename = output_pdf_B2M,
+  plot     = p_B2M_cd8,
+  width    = 52,
+  height   = 95,
+  units    = "mm",
+  device   = cairo_pdf
+)
+
+# ==== 9. Statistical tests ====
+tab_A <- table(
+  df %>% filter(HLA_A_LOH %in% c("ROH", "LOH")) %>% pull(HLA_A_LOH),
+  df %>% filter(HLA_A_LOH %in% c("ROH", "LOH")) %>% pull(CD8_group)
+)
+
+fisher_A <- fisher.test(
+  tab_A,
+  simulate.p.value = TRUE,
+  B = 200000
+)
+
+fisher_A$p.value
+
+tab_B2M <- table(
+  df %>% filter(B2M_7loci_LOH %in% c("ROH", "LOH")) %>% pull(B2M_7loci_LOH),
+  df %>% filter(B2M_7loci_LOH %in% c("ROH", "LOH")) %>% pull(CD8_group)
+)
+
+fisher_B2M <- fisher.test(
+  tab_B2M,
+  simulate.p.value = TRUE,
+  B = 200000
+)
+
+fisher_B2M$p.value
