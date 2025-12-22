@@ -1,0 +1,91 @@
+# ============================================================
+# Script: Fig6X_HLA_molecular_subtype_stacked_bar.R
+# Purpose: Stacked bar plot of HLA-I expression by molecular subtype
+# Figure: Corresponding to Fig. 6 (panel X)
+# Journal: Cell Reports Medicine
+# ============================================================
+
+# ==== 1. Load required packages ====
+suppressPackageStartupMessages({
+  library(readxl)
+  library(dplyr)
+  library(ggplot2)
+})
+
+# ==== 2. File paths (relative paths) ====
+input_excel <- "data/Fig6A_oncoprint_data.xlsx"
+output_pdf  <- "figure/Fig6X_HLA_molecular_subtype_stacked_bar.pdf"
+
+# ==== 3. Load data ====
+df_raw <- read_excel(input_excel)
+
+# ==== 4. Extract required columns ====
+# Column 5: HLA_I, Column 2: Molecular_Subtype
+dat_bar <- df_raw %>%
+  transmute(
+    Molecular_Subtype = .[[2]],
+    HLA_I             = .[[5]]
+  ) %>%
+  filter(
+    !is.na(HLA_I), HLA_I != "",
+    !is.na(Molecular_Subtype), Molecular_Subtype != ""
+  ) %>%
+  mutate(
+    HLA_I = factor(
+      HLA_I,
+      levels = c("Negative", "Heterogeneous", "Positive")
+    ),
+    Molecular_Subtype = factor(
+      Molecular_Subtype,
+      levels = c("POLE", "MSI", "p53abn", "NSMP")
+    )
+  )
+
+# ==== 5. Color definition ====
+col_hlaI <- c(
+  "Positive"       = "#0072B2",
+  "Heterogeneous"  = "#E69F00",
+  "Negative"       = "#4D4D4D"
+)
+
+# ==== 6. Stacked bar plot (proportion) ====
+p_bar <- ggplot(dat_bar, aes(x = Molecular_Subtype, fill = HLA_I)) +
+  geom_bar(
+    position = "fill",
+    width = 0.65,
+    color = "#404040"
+  ) +
+  scale_fill_manual(values = col_hlaI, drop = FALSE) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 1)) +
+  xlab("Molecular subtype") +
+  ylab("Proportion of HLA-I expression") +
+  theme_bw() +
+  theme(
+    text        = element_text(family = "Arial", size = 12, color = "black"),
+    axis.title  = element_text(size = 12),
+    axis.text   = element_text(size = 12),
+    axis.text.x = element_text(angle = 35, hjust = 1),
+    legend.title = element_text(size = 12),
+    legend.text  = element_text(size = 12)
+  )
+
+# ==== 7. Save figure ====
+ggsave(
+  filename = output_pdf,
+  plot     = p_bar,
+  width    = 95,
+  height   = 100,
+  units    = "mm",
+  device   = cairo_pdf
+)
+
+# ==== 8. Statistical test ====
+tab_hla_subtype <- table(dat_bar$Molecular_Subtype, dat_bar$HLA_I)
+
+fisher_res <- fisher.test(
+  tab_hla_subtype,
+  simulate.p.value = TRUE,
+  B = 200000
+)
+
+fisher_res$p.value
