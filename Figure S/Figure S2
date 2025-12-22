@@ -1,0 +1,155 @@
+# ============================================================
+# Script: FigSx_HLA_methylation_histogram_KDE.R
+# Purpose: Histogram and kernel density estimation of HLA-A methylation levels
+# Journal: Cell Reports Medicine
+# ============================================================
+
+# ==== 1. Load required packages ====
+suppressPackageStartupMessages({
+  library(readxl)
+  library(dplyr)
+  library(ggplot2)
+  library(showtext)
+})
+
+# ==== 2. Font settings ====
+font_add("Arial", regular = "/Library/Fonts/Arial.ttf")
+showtext_auto()
+
+# ==== 3. File paths (relative paths) ====
+input_excel <- "data/HLA_BISseq_data.xlsx"
+output_dir  <- "figure"
+
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir, recursive = TRUE)
+}
+
+# ==== 4. Load and preprocess data ====
+hla_data <- read_excel(input_excel, sheet = 1)
+
+met_ave <- hla_data$average
+met_ave <- met_ave[!is.na(met_ave)]
+met_ave <- met_ave[met_ave >= 0 & met_ave <= 1]
+
+# ==== 5. Summary statistics (console output) ====
+cat("N:", length(met_ave), "\n")
+cat("Mean:", round(mean(met_ave), 2), "\n")
+cat("Median:", round(median(met_ave), 2), "\n")
+cat("SD:", round(sd(met_ave), 2), "\n")
+cat("Min:", round(min(met_ave), 2), "\n")
+cat("Max:", round(max(met_ave), 2), "\n")
+
+# ==== 6. Kernel density estimation ====
+bandwidth <- 0.05
+grid_step <- 0.01
+x_grid <- seq(0, 1, by = grid_step)
+
+kde <- density(
+  met_ave,
+  bw   = bandwidth,
+  from = 0,
+  to   = 1,
+  n    = length(x_grid)
+)
+
+kde_y <- approx(kde$x, kde$y, xout = x_grid)$y
+
+# ==== 7. Histogram + KDE plot ====
+p_base <- ggplot(data.frame(value = met_ave), aes(x = value)) +
+  geom_histogram(
+    aes(y = after_stat(density)),
+    bins = 20,
+    fill = "#69b3a2",
+    alpha = 0.7,
+    color = "white",
+    linewidth = 0.5
+  ) +
+  geom_line(
+    data = data.frame(x = x_grid, y = kde_y),
+    aes(x = x, y = y),
+    color = "#ff6b6b",
+    linewidth = 1.2
+  ) +
+  coord_cartesian(xlim = c(0, 1)) +
+  labs(
+    title = "HLA-A methylation distribution",
+    x = "Average methylation",
+    y = "Density"
+  ) +
+  theme_minimal(base_family = "Arial", base_size = 12) +
+  theme(
+    plot.title = element_text(hjust = 0.5)
+  )
+
+# ==== 8. Detect local minima ====
+find_local_minima <- function(x, y) {
+  idx <- which(diff(sign(diff(y))) == 2) + 1
+  x[idx]
+}
+
+local_min <- sort(find_local_minima(x_grid, kde_y))
+
+# ==== 9. Plot with local minima (if any) ====
+if (length(local_min) > 0) {
+  y_min <- approx(x_grid, kde_y, xout = local_min)$y
+  
+  p_min <- p_base +
+    geom_point(
+      data = data.frame(x = local_min, y = y_min),
+      aes(x = x, y = y),
+      shape = 21,
+      size = 3,
+      fill = "white",
+      color = "red"
+    ) +
+    geom_text(
+      data = data.frame(x = local_min, y = y_min),
+      aes(x = x, y = y,
+          label = sprintf("%.2f", x)),
+      vjust = -1.2,
+      color = "red",
+      family = "Arial",
+      fontface = "bold",
+      size = 3.5
+    )
+} else {
+  p_min <- p_base
+}
+
+# ==== 10. Save figures (A5 landscape) ====
+ggsave(
+  filename = file.path(output_dir, "FigSx_HLA_histogram_KDE.pdf"),
+  plot     = p_base,
+  width    = 8.27,
+  height   = 5.83,
+  units    = "in"
+)
+
+ggsave(
+  filename = file.path(output_dir, "FigSx_HLA_histogram_KDE_with_minima.pdf"),
+  plot     = p_min,
+  width    = 8.27,
+  height   = 5.83,
+  units    = "in"
+)
+
+# ==== 11. Save text report ====
+report_txt <- paste0(
+  "HLA-A methylation KDE analysis\n",
+  "==============================\n",
+  "N: ", length(met_ave), "\n",
+  "Mean: ", round(mean(met_ave), 2), "\n",
+  "Median: ", round(median(met_ave), 2), "\n",
+  "SD: ", round(sd(met_ave), 2), "\n\n",
+  "Local minima:\n",
+  if (length(local_min) > 0)
+    paste(sprintf("  %.2f", local_min), collapse = "\n")
+  else
+    "  None detected"
+)
+
+writeLines(
+  report_txt,
+  con = file.path(output_dir, "FigSx_HLA_KDE_minima_report.txt"),
+  useBytes = TRUE
+)
