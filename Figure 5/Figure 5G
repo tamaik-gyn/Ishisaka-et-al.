@@ -1,0 +1,81 @@
+# ============================================================
+# Script: Fig6X_HLA_LOH_KM.R
+# Purpose: Kaplan–Meier analysis stratified by HLA LOH status
+# Figure: Corresponding to Fig. 6 (panel X)
+# Journal: Cell Reports Medicine
+# ============================================================
+
+# ==== 1. Load required packages ====
+suppressPackageStartupMessages({
+  library(survival)
+  library(survminer)
+  library(readxl)
+  library(showtext)
+})
+
+# ==== 2. Font settings ====
+font_add("Arial", regular = "/Library/Fonts/Arial.ttf")
+showtext_auto()
+
+# ==== 3. File paths (relative paths) ====
+input_excel <- "data/HLA_LOH_KM_data.xlsx"
+output_pdf  <- "figure/Fig6X_HLA_LOH_KM.pdf"
+
+# ==== 4. Load data ====
+data <- read_excel(input_excel)
+
+# ==== 5. Filter and preprocess data ====
+data_filtered <- data %>%
+  filter(HLA_3 %in% c("LOH", "Ret")) %>%
+  mutate(
+    HLA_3 = ifelse(HLA_3 == "Ret", "ROH", HLA_3),
+    HLA_3 = factor(HLA_3, levels = c("LOH", "ROH"))
+  )
+
+# ==== 6. Survival analysis ====
+fit <- survfit(
+  Surv(PFS_time, PFS_ivent) ~ HLA_3,
+  data = data_filtered
+)
+
+# ==== 7. Kaplan–Meier plot ====
+p <- ggsurvplot(
+  fit,
+  data = data_filtered,
+  palette = c("#1f78b4", "#e31a1c"),
+  pval = TRUE,
+  conf.int = TRUE,
+  conf.int.alpha = 0.15,
+  risk.table = TRUE,
+  legend.title = "HLA status",
+  legend.labs  = c("LOH", "ROH"),
+  ggtheme = theme_bw(base_size = 12, base_family = "Arial"),
+  risk.table.fontsize = 12,
+  risk.table.height = 0.20
+)
+
+# ==== 8. Theme adjustments ====
+p$plot <- p$plot +
+  theme(
+    axis.text   = element_text(family = "Arial", size = 12),
+    axis.title  = element_text(family = "Arial", size = 12),
+    legend.text = element_text(family = "Arial", size = 12),
+    legend.title = element_text(family = "Arial", size = 12)
+  )
+
+p$table <- p$table +
+  theme(
+    text       = element_text(family = "Arial", size = 12),
+    axis.text  = element_text(family = "Arial", size = 12),
+    axis.title = element_text(family = "Arial", size = 12)
+  )
+
+# ==== 9. Save figure ====
+ggsave(
+  filename = output_pdf,
+  plot     = p$plot,
+  width    = 100,
+  height   = 100,
+  units    = "mm",
+  device   = cairo_pdf
+)
