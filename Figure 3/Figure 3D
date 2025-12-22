@@ -1,0 +1,106 @@
+# ============================================================
+# Script: FigX_HLAI_paired_boxplot.R
+# Purpose: Paired boxplot of log10(CD8 ROI area) by HLA-I status
+# Figure: Corresponding to Fig. X
+# Journal: Cell Reports Medicine
+# ============================================================
+
+# ==== 1. Load required packages ====
+suppressPackageStartupMessages({
+  library(readxl)
+  library(dplyr)
+  library(ggplot2)
+  library(ggpubr)
+  library(tidyr)
+})
+
+# ==== 2. File paths (relative paths) ====
+input_excel <- "data/HLAhetero_CD8_data.xlsx"
+output_pdf  <- "figure/FigX_HLAI_paired_boxplot.pdf"
+
+# ==== 3. Load and preprocess data ====
+df <- read_excel(input_excel) %>%
+  mutate(
+    ID = factor(ID),
+    HLA_status = factor(
+      HLA_I,
+      levels = c(0, 1),
+      labels = c("Negative", "Positive")
+    ),
+    log10_area = log10(CD8_ROI)
+  )
+
+# ==== 4. Paired Wilcoxon signed-rank test ====
+wide_df <- df %>%
+  select(ID, HLA_status, log10_area) %>%
+  pivot_wider(
+    names_from  = HLA_status,
+    values_from = log10_area
+  )
+
+wil_p <- wilcox.test(
+  wide_df$Negative,
+  wide_df$Positive,
+  paired = TRUE
+)$p.value
+
+p_star <- case_when(
+  wil_p < 0.001 ~ "***",
+  wil_p < 0.01  ~ "**",
+  wil_p < 0.05  ~ "*",
+  TRUE          ~ "ns"
+)
+
+# ==== 5. Color definition ====
+col_hlaI <- c(
+  "Positive" = "#0072B2",
+  "Negative" = "#4D4D4D"
+)
+
+# ==== 6. Paired boxplot ====
+p <- ggplot(df, aes(x = HLA_status, y = log10_area, fill = HLA_status)) +
+  geom_boxplot(
+    width = 0.6,
+    outlier.shape = NA,
+    color = "black"
+  ) +
+  geom_line(
+    aes(group = ID),
+    color = "grey70",
+    linewidth = 0.8,
+    alpha = 0.7
+  ) +
+  geom_point(
+    size = 3,
+    alpha = 0.9,
+    color = "black"
+  ) +
+  scale_fill_manual(values = col_hlaI, name = "HLA-I") +
+  annotate(
+    "text",
+    x = 1.5,
+    y = max(df$log10_area, na.rm = TRUE) * 1.1,
+    label = p_star,
+    size = 6
+  ) +
+  xlab("HLA-I status") +
+  ylab("log10(CD8 ROI area)") +
+  theme_bw() +
+  theme(
+    text       = element_text(family = "Arial", size = 12),
+    axis.text  = element_text(color = "black"),
+    axis.title = element_text(color = "black")
+  )
+
+# ==== 7. Save figure ====
+ggsave(
+  filename = output_pdf,
+  plot     = p,
+  width    = 100,
+  height   = 110,
+  units    = "mm",
+  device   = cairo_pdf
+)
+
+# ==== 8. Output p-value ====
+wil_p
