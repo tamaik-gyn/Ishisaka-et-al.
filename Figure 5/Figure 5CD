@@ -1,0 +1,129 @@
+# ============================================================
+# Script: Fig6X_Subtype_LOH_stacked_bar.R
+# Purpose: Stacked bar plots of LOH status by molecular subtype (HLA-A and B2M)
+# Figure: Corresponding to Fig. 6 (panel X)
+# Journal: Cell Reports Medicine
+# ============================================================
+
+# ==== 1. Load required packages ====
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(ggplot2)
+  library(readxl)
+  library(stringr)
+})
+
+# ==== 2. File paths (relative paths) ====
+input_excel   <- "data/LOH_data.xlsx"
+output_pdf_A  <- "figure/Fig6X_Subtype_HLA_A_LOH.pdf"
+output_pdf_B2M <- "figure/Fig6X_Subtype_B2M_LOH.pdf"
+
+# ==== 3. Load data ====
+df <- read_excel(input_excel)
+
+# ==== 4. Normalize LOH labels ====
+df <- df %>%
+  mutate(
+    HLA_A_LOH     = ifelse(HLA_A_LOH == "Ret", "ROH", HLA_A_LOH),
+    B2M_7loci_LOH = ifelse(B2M_7loci_LOH == "Ret", "ROH", B2M_7loci_LOH)
+  )
+
+# ==== 5. Subtype settings ====
+sub_levels <- c("POLE", "p53abn", "NSMP")
+
+col_subtype <- c(
+  "POLE"   = "#0072B2",
+  "p53abn" = "#c1393a",
+  "NSMP"   = "#F0E442"
+)
+
+# ==== 6. Function to generate stacked bar plot ====
+make_barplot_subtype <- function(df, loh_col, xlab_text) {
+  
+  df_plot <- df %>%
+    filter(Molecular_Subtype %in% sub_levels) %>%
+    filter(.data[[loh_col]] %in% c("ROH", "LOH")) %>%
+    mutate(
+      Molecular_Subtype = factor(Molecular_Subtype, levels = sub_levels),
+      LOH_status = factor(.data[[loh_col]], levels = c("ROH", "LOH"))
+    ) %>%
+    count(LOH_status, Molecular_Subtype) %>%
+    group_by(LOH_status) %>%
+    mutate(frac = n / sum(n)) %>%
+    ungroup()
+  
+  ggplot(
+    df_plot,
+    aes(x = LOH_status, y = frac, fill = Molecular_Subtype)
+  ) +
+    geom_col(
+      color = "black",
+      linewidth = 0.2,
+      width = 0.65
+    ) +
+    scale_fill_manual(values = col_subtype, name = "Subtype") +
+    scale_y_continuous(expand = c(0, 0), limits = c(0, 1)) +
+    scale_x_discrete(expand = c(0.2, 0)) +
+    xlab(xlab_text) +
+    ylab("") +
+    theme_bw() +
+    theme(
+      text        = element_text(family = "Arial", size = 12),
+      axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
+      legend.key.size   = unit(3, "mm"),
+      legend.text       = element_text(size = 9),
+      legend.title      = element_text(size = 9),
+      legend.spacing.y  = unit(0.5, "mm"),
+      legend.box.margin = margin(0, 0, 0, 0)
+    )
+}
+
+# ==== 7. Generate plots ====
+p_A   <- make_barplot_subtype(df, "HLA_A_LOH", "HLA-A LOH")
+p_B2M <- make_barplot_subtype(df, "B2M_7loci_LOH", "B2M LOH")
+
+# ==== 8. Save figures ====
+ggsave(
+  filename = output_pdf_A,
+  plot     = p_A,
+  width    = 52,
+  height   = 95,
+  units    = "mm",
+  device   = cairo_pdf
+)
+
+ggsave(
+  filename = output_pdf_B2M,
+  plot     = p_B2M,
+  width    = 52,
+  height   = 95,
+  units    = "mm",
+  device   = cairo_pdf
+)
+
+# ==== 9. Statistical tests ====
+tab_A_sub <- table(
+  df %>% filter(Molecular_Subtype %in% sub_levels) %>% pull(HLA_A_LOH),
+  df %>% filter(Molecular_Subtype %in% sub_levels) %>% pull(Molecular_Subtype)
+)
+
+fisher_A_sub <- fisher.test(
+  tab_A_sub,
+  simulate.p.value = TRUE,
+  B = 200000
+)
+
+fisher_A_sub$p.value
+
+tab_B2M_sub <- table(
+  df %>% filter(Molecular_Subtype %in% sub_levels) %>% pull(B2M_7loci_LOH),
+  df %>% filter(Molecular_Subtype %in% sub_levels) %>% pull(Molecular_Subtype)
+)
+
+fisher_B2M_sub <- fisher.test(
+  tab_B2M_sub,
+  simulate.p.value = TRUE,
+  B = 200000
+)
+
+fisher_B2M_sub$p.value
