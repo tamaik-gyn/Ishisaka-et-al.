@@ -1,0 +1,131 @@
+# ============================================================
+# Script: Fig6X_CD8_HLA_boxplot.R
+# Purpose: Boxplot of log10(area_ROI) stratified by HLA-I expression
+# Figure: Corresponding to Fig. 6 (panel X)
+# Journal: Cell Reports Medicine
+# ============================================================
+
+# ==== 1. Load required packages ====
+suppressPackageStartupMessages({
+  library(ggplot2)
+  library(readxl)
+  library(ggpubr)
+  library(FSA)
+  library(dplyr)
+})
+
+# ==== 2. File paths (relative paths) ====
+input_excel <- "data/CD8_HLA_boxplot_data.xlsx"
+output_pdf_main <- "figure/Fig6X_CD8_HLA_boxplot.pdf"
+output_pdf_dunn <- "figure/Fig6X_CD8_HLA_boxplot_Dunn.pdf"
+
+# ==== 3. Load data ====
+df <- read_excel(input_excel)
+
+# ==== 4. Preprocessing ====
+df <- df %>%
+  mutate(
+    HLA_filtration = factor(
+      HLA_filtration,
+      levels = c("1", "2", "3")
+    ),
+    log10_area_ROI = log10(area_ROI)
+  )
+
+# ==== 5. Color definition ====
+col_hlaI <- c(
+  "1" = "#4D4D4D",  # Negative
+  "2" = "#E69F00",  # Heterogeneous
+  "3" = "#0072B2"   # Positive
+)
+
+# ==== 6. Boxplot ====
+p <- ggplot(
+  df,
+  aes(
+    x = HLA_filtration,
+    y = log10_area_ROI,
+    fill = HLA_filtration
+  )
+) +
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(
+    color = "black",
+    width = 0.2,
+    alpha = 0.8,
+    size = 1.8
+  ) +
+  scale_fill_manual(values = col_hlaI) +
+  scale_x_discrete(
+    labels = c(
+      "1" = "Negative",
+      "2" = "Heterogeneous",
+      "3" = "Positive"
+    )
+  ) +
+  xlab("HLA-I expression") +
+  ylab("log10(area_ROI)") +
+  theme_bw() +
+  theme(
+    text        = element_text(family = "Arial", size = 12),
+    axis.title  = element_text(size = 12, color = "black"),
+    axis.text   = element_text(size = 12, color = "black"),
+    legend.position = "none"
+  )
+
+# ==== 7. Save main boxplot ====
+ggsave(
+  filename = output_pdf_main,
+  plot     = p,
+  width    = 100,
+  height   = 100,
+  units    = "mm",
+  device   = cairo_pdf
+)
+
+# ==== 8. Statistical tests ====
+kruskal_res <- kruskal.test(
+  log10_area_ROI ~ HLA_filtration,
+  data = df
+)
+
+dunn_res <- dunnTest(
+  log10_area_ROI ~ HLA_filtration,
+  data   = df,
+  method = "bonferroni"
+)
+
+# ==== 9. Prepare Dunn test results for plotting ====
+dunn_df <- as.data.frame(dunn_res$res) %>%
+  select(Comparison, P.adj) %>%
+  mutate(
+    group1 = sub(" - .*", "", Comparison),
+    group2 = sub(".* - ", "", Comparison),
+    label = case_when(
+      P.adj < 0.001 ~ "***",
+      P.adj < 0.01  ~ "**",
+      P.adj < 0.05  ~ "*",
+      TRUE          ~ ""
+    )
+  )
+
+y_max <- max(df$log10_area_ROI, na.rm = TRUE)
+dunn_df$y.position <- y_max * c(1.05, 1.10, 1.15)
+
+# ==== 10. Add Dunn test p-values ====
+p_dunn <- p +
+  stat_pvalue_manual(
+    dunn_df,
+    label = "label",
+    tip.length = 0.02
+  )
+
+# ==== 11. Save boxplot with statistical annotation ====
+ggsave(
+  filename = output_pdf_dunn,
+  plot     = p_dunn,
+  width    = 100,
+  height   = 100,
+  units    = "mm",
+  device   = cairo_pdf
+)
