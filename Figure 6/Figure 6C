@@ -1,0 +1,235 @@
+# ============================================================
+# Script: Fig6X_B2M_LOH_nested_pies.R
+# Purpose: Nested pie charts (Subtype → B2M LOH → outer ring)
+# Journal: Cell Reports Medicine
+# ============================================================
+
+# ==== 1. Load required packages ====
+suppressPackageStartupMessages({
+  library(readxl)
+  library(dplyr)
+  library(stringr)
+  library(ggplot2)
+  library(ggforce)
+  library(ggnewscale)
+  library(grid)
+})
+
+# ==== 2. File paths (relative paths) ====
+input_excel <- "data/Fig6A_oncoprint_data.xlsx"
+output_pdf  <- "figure/Fig6X_B2M_LOH_nested_pies.pdf"
+
+# ==== 3. Load and preprocess data ====
+dat <- read_excel(input_excel) %>%
+  select(sample_ID, Molecular_Subtype, B2M_LOH, CD8) %>%
+  mutate(
+    Molecular_Subtype = str_trim(Molecular_Subtype),
+    B2M_LOH           = toupper(str_trim(B2M_LOH)),
+    CD8               = str_trim(CD8)
+  )
+
+sub_levels <- c("POLE", "p53abn", "NSMP")
+
+dat <- dat %>%
+  filter(
+    Molecular_Subtype %in% sub_levels,
+    B2M_LOH %in% c("ROH", "LOH")
+  ) %>%
+  mutate(
+    Molecular_Subtype = factor(Molecular_Subtype, levels = sub_levels),
+    B2M_LOH           = factor(B2M_LOH, levels = c("ROH", "LOH")),
+    CD8               = factor(CD8,
+                               levels = c("Absent", "Excluded", "Infiltrated"))
+  )
+
+# ==== 4. Prepare pie chart data ====
+
+# ---- Center (Subtype) ----
+center_df <- dat %>%
+  count(Molecular_Subtype) %>%
+  mutate(
+    frac = n / sum(n),
+    angle_start = lag(cumsum(frac), default = 0) * 2 * pi,
+    angle_end   = cumsum(frac) * 2 * pi,
+    r0 = 0.00,
+    r  = 0.35
+  ) %>%
+  arrange(Molecular_Subtype)
+
+# ---- Middle ring (Subtype × B2M LOH) ----
+mid_df <- dat %>%
+  count(Molecular_Subtype, B2M_LOH) %>%
+  group_by(Molecular_Subtype) %>%
+  mutate(frac_sub = n / sum(n)) %>%
+  ungroup() %>%
+  left_join(
+    center_df %>%
+      select(Molecular_Subtype,
+             sub_start = angle_start,
+             sub_end   = angle_end),
+    by = "Molecular_Subtype"
+  ) %>%
+  group_by(Molecular_Subtype) %>%
+  arrange(B2M_LOH) %>%
+  mutate(
+    cum       = cumsum(frac_sub),
+    cum_prev  = lag(cum, default = 0),
+    angle_start = sub_start + cum_prev * (sub_end - sub_start),
+    angle_end   = sub_start + cum      * (sub_end - sub_start),
+    r0 = 0.40,
+    r  = 0.65
+  ) %>%
+  ungroup()
+
+# ---- Outer ring (boundary only) ----
+outer_ring_df <- mid_df %>%
+  mutate(r0 = 0.65, r = 1.20)
+
+# ---- Subtype boundaries ----
+boundary_df <- center_df %>%
+  transmute(angle = angle_start) %>%
+  bind_rows(tibble(angle = 2 * pi)) %>%
+  mutate(
+    x_start = 0.00 * cos(pi/2 - angle),
+    y_start = 0.00 * sin(pi/2 - angle),
+    x_end   = 1.21 * cos(pi/2 - angle),
+    y_end   = 1.21 * sin(pi/2 - angle)
+  )
+
+# ==== 5. Color definitions ====
+col_subtype <- c(
+  "POLE"   = "#0072B2",
+  "p53abn" = "#c1393a",
+  "NSMP"   = "#F0E442"
+)
+
+col_b2m <- c(
+  "ROH" = "#7DBE3C",
+  "LOH" = "#CC79A7"
+)
+
+col_cd8 <- c(
+  "Absent"      = "#325C9E",
+  "Excluded"    = "#AFC3DD",
+  "Infiltrated" = "#D45E5E"
+)
+
+# ---- Dummy data for CD8 legend ----
+dummy_cd8 <- data.frame(
+  x = 1:3,
+  y = 1,
+  CD8 = factor(names(col_cd8), levels = names(col_cd8))
+)
+
+# ==== 6. Plot ====
+p <- ggplot() +
+  
+  # ---- Center: Subtype ----
+geom_arc_bar(
+  data = center_df,
+  aes(x0 = 0, y0 = 0,
+      r0 = r0, r = r,
+      start = angle_start, end = angle_end,
+      fill = Molecular_Subtype),
+  color = "grey40",
+  linewidth = 0.3
+) +
+  scale_fill_manual(
+    name   = "Subtype",
+    values = col_subtype,
+    guide  = guide_legend(
+      order = 1,
+      override.aes = list(colour = NA)
+    )
+  ) +
+  
+  ggnewscale::new_scale_fill() +
+  
+  # ---- Middle ring: B2M LOH ----
+geom_arc_bar(
+  data = mid_df,
+  aes(x0 = 0, y0 = 0,
+      r0 = r0, r = r,
+      start = angle_start, end = angle_end,
+      fill = B2M_LOH),
+  color = "grey40",
+  linewidth = 0.3
+) +
+  scale_fill_manual(
+    name   = "B2M LOH",
+    values = col_b2m,
+    guide  = guide_legend(
+      order = 2,
+      override.aes = list(colour = NA)
+    )
+  ) +
+  
+  ggnewscale::new_scale_fill() +
+  
+  # ---- CD8 legend only ----
+geom_rect(
+  data = dummy_cd8,
+  aes(xmin = 0, xmax = 1, ymin = 0, ymax = 1, fill = CD8),
+  alpha = 0
+) +
+  scale_fill_manual(
+    name   = "CD8",
+    values = col_cd8,
+    guide  = guide_legend(
+      order = 3,
+      override.aes = list(colour = NA, alpha = 1)
+    )
+  ) +
+  
+  # ---- Outer boundary ----
+geom_arc_bar(
+  data = outer_ring_df,
+  aes(x0 = 0, y0 = 0,
+      r0 = r0, r = r,
+      start = angle_start, end = angle_end),
+  fill = NA,
+  color = "grey40",
+  linewidth = 0.4
+) +
+  
+  # ---- Mask outer edge ----
+geom_arc_bar(
+  data = data.frame(
+    x0 = 0, y0 = 0,
+    r0 = 1.19, r = 1.21,
+    start = 0, end = 2 * pi
+  ),
+  aes(x0 = x0, y0 = y0, r0 = r0, r = r, start = start, end = end),
+  fill = "white",
+  color = NA
+) +
+  
+  # ---- Subtype boundaries ----
+geom_segment(
+  data = boundary_df,
+  aes(x = x_start, y = y_start, xend = x_end, yend = y_end),
+  color = "grey20",
+  linewidth = 1
+) +
+  
+  coord_fixed() +
+  theme_void() +
+  theme(
+    legend.box       = "vertical",
+    legend.position  = "right",
+    legend.title     = element_text(family = "Arial", size = 12, face = "bold"),
+    legend.text      = element_text(family = "Arial", size = 10),
+    text             = element_text(family = "Arial", size = 10),
+    legend.key.size  = grid::unit(5, "mm"),
+    legend.spacing.y = unit(1, "lines")
+  )
+
+# ==== 7. Save figure ====
+ggsave(
+  filename = output_pdf,
+  plot     = p,
+  width    = 112,
+  height   = 96,
+  units    = "mm",
+  device   = cairo_pdf
+)
