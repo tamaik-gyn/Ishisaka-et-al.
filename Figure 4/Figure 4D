@@ -1,0 +1,84 @@
+# ============================================================
+# Script: Fig6X_HLAA_methylation_CD8_stacked_bar.R
+# Purpose: Stacked bar plot of CD8 infiltration by HLA-A methylation status
+# Figure: Corresponding to Fig. 6 (panel X)
+# Journal: Cell Reports Medicine
+# ============================================================
+
+# ==== 1. Load required packages ====
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(ggplot2)
+  library(readxl)
+  library(stringr)
+})
+
+# ==== 2. File paths (relative paths) ====
+input_excel <- "data/Fig6A_oncoprint_data.xlsx"
+output_pdf  <- "figure/Fig6X_HLAA_methylation_CD8_stacked_bar.pdf"
+
+# ==== 3. Load data ====
+df <- read_excel(input_excel)
+
+# ==== 4. Preprocessing ====
+df <- df %>%
+  mutate(
+    HLA_A_meth = factor(
+      HLA_A_BIS_target,
+      levels = c("unmethylated", "methylated"),
+      labels = c("Unmethylated", "Methylated")
+    ),
+    CD8_group = factor(
+      str_trim(CD8),
+      levels = c("Absent", "Excluded", "Infiltrated")
+    )
+  ) %>%
+  filter(
+    !is.na(HLA_A_meth), HLA_A_meth != "",
+    !is.na(CD8_group), CD8_group != ""
+  )
+
+# ==== 5. Color definition ====
+col_cd8 <- c(
+  "Absent"       = "#325C9E",
+  "Excluded"     = "#AFC3DD",
+  "Infiltrated"  = "#D45E5E"
+)
+
+# ==== 6. Stacked bar plot (proportion) ====
+p_meth_cd8 <- ggplot(df, aes(x = HLA_A_meth, fill = CD8_group)) +
+  geom_bar(
+    position = "fill",
+    width = 0.60,
+    color = "black",
+    linewidth = 0.25
+  ) +
+  scale_fill_manual(values = col_cd8, name = "CD8 infiltration") +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 1)) +
+  xlab("HLA-A methylation") +
+  ylab("Proportion") +
+  theme_bw() +
+  theme(
+    text = element_text(family = "Arial", size = 12, color = "black")
+  )
+
+# ==== 7. Save figure ====
+ggsave(
+  filename = output_pdf,
+  plot     = p_meth_cd8,
+  width    = 100,
+  height   = 80,
+  units    = "mm",
+  device   = cairo_pdf
+)
+
+# ==== 8. Statistical test ====
+tab_cd8 <- table(df$HLA_A_meth, df$CD8_group)
+
+fisher_cd8 <- fisher.test(
+  tab_cd8,
+  simulate.p.value = TRUE,
+  B = 200000
+)
+
+fisher_cd8$p.value
