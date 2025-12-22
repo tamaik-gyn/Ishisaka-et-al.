@@ -1,0 +1,60 @@
+# ============================================================
+# Script: FigX_HLA_filtration_pie.R
+# Purpose: Pie chart of HLA-I expression status
+# Figure: Corresponding to Fig. X
+# Journal: Cell Reports Medicine
+# ============================================================
+
+# ==== 1. Load required packages ====
+suppressPackageStartupMessages({
+  library(ggplot2)
+  library(readxl)
+  library(dplyr)
+})
+
+# ==== 2. File paths (relative paths) ====
+input_excel <- "data/HLA_filtration_data.xlsx"
+output_pdf  <- "figure/FigX_HLA_filtration_pie.pdf"
+
+# ==== 3. Load data ====
+df <- read_excel(input_excel)
+
+# ==== 4. Aggregate HLA filtration status ====
+hla_counts <- df %>%
+  count(HLA_filtration) %>%
+  mutate(
+    label = factor(
+      HLA_filtration,
+      levels = c(1, 2, 3),
+      labels = c("Negative", "Heterogeneous", "Positive")
+    )
+  )
+
+# ==== 5. Color definition ====
+col_hlaI <- c(
+  "Positive"       = "#0072B2",
+  "Heterogeneous"  = "#E69F00",
+  "Negative"       = "#4D4D4D"
+)
+
+# ==== 6. Pie chart ====
+p <- ggplot(hla_counts, aes(x = "", y = n, fill = label)) +
+  geom_bar(stat = "identity", width = 1, color = "white") +
+  coord_polar(theta = "y") +
+  scale_fill_manual(values = col_hlaI) +
+  theme_void() +
+  theme(
+    text = element_text(family = "Arial"),
+    legend.title = element_blank(),
+    legend.text  = element_text(size = 12, family = "Arial")
+  )
+
+# ==== 7. Save figure ====
+ggsave(
+  filename = output_pdf,
+  plot     = p,
+  width    = 10,
+  height   = 8,
+  units    = "cm",
+  device   = cairo_pdf
+)
