@@ -1,0 +1,81 @@
+# ============================================================
+# Script: Fig6X_HLAI_HLAA_methylation_stacked_bar.R
+# Purpose: Stacked bar plot of HLA-A methylation status by HLA-I expression
+# Figure: Corresponding to Fig. 6 (panel X)
+# Journal: Cell Reports Medicine
+# ============================================================
+
+# ==== 1. Load required packages ====
+suppressPackageStartupMessages({
+  library(dplyr)
+  library(ggplot2)
+  library(readxl)
+  library(stringr)
+})
+
+# ==== 2. File paths (relative paths) ====
+input_excel <- "data/Fig6A_oncoprint_data.xlsx"
+output_pdf  <- "figure/Fig6X_HLAI_HLAA_methylation_stacked_bar.pdf"
+
+# ==== 3. Load data ====
+df <- read_excel(input_excel)
+
+# ==== 4. Preprocessing ====
+df <- df %>%
+  mutate(
+    HLA_I = factor(
+      HLA_I,
+      levels = c("Negative", "Heterogeneous", "Positive")
+    ),
+    HLA_A_meth = factor(
+      HLA_A_BIS_target,
+      levels = c("unmethylated", "methylated"),
+      labels = c("Unmethylated", "Methylated")
+    )
+  ) %>%
+  filter(
+    !is.na(HLA_I), HLA_I != "",
+    !is.na(HLA_A_meth), HLA_A_meth != ""
+  )
+
+# ==== 5. Color definition ====
+col_meth <- c(
+  "Unmethylated" = "#4D4D4D",
+  "Methylated"   = "#0072B2"
+)
+
+# ==== 6. Stacked bar plot (proportion) ====
+p_meth <- ggplot(df, aes(x = HLA_I, fill = HLA_A_meth)) +
+  geom_bar(
+    position = "fill",
+    width = 0.65,
+    color = "black",
+    linewidth = 0.25
+  ) +
+  scale_fill_manual(values = col_meth, name = "HLA-A methylation") +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 1)) +
+  xlab("HLA-I status") +
+  ylab("Proportion") +
+  theme_bw() +
+  theme(
+    text        = element_text(family = "Arial", size = 12, color = "black"),
+    legend.position = "right",
+    axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)
+  )
+
+# ==== 7. Save figure ====
+ggsave(
+  filename = output_pdf,
+  plot     = p_meth,
+  width    = 100,
+  height   = 80,
+  units    = "mm",
+  device   = cairo_pdf
+)
+
+# ==== 8. Statistical test ====
+tab_meth <- table(df$HLA_I, df$HLA_A_meth)
+
+fisher_res <- fisher.test(tab_meth)
+
+fisher_res$p.value
