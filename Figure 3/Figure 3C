@@ -1,0 +1,88 @@
+# ============================================================
+# Script: FigX_HLAI_CD8_barplot.R
+# Purpose: Bar plot of CD8 ROI area stratified by HLA-I status
+# Figure: Corresponding to Fig. X
+# Journal: Cell Reports Medicine
+# ============================================================
+
+# ==== 1. Load required packages ====
+suppressPackageStartupMessages({
+  library(readxl)
+  library(dplyr)
+  library(stringr)
+  library(ggplot2)
+})
+
+# ==== 2. File paths (relative paths) ====
+input_excel <- "data/HLAhetero_CD8_data.xlsx"
+output_pdf  <- "figure/FigX_HLAI_CD8_barplot.pdf"
+
+# ==== 3. Load data ====
+dat <- read_excel(input_excel) %>%
+  mutate(
+    ID = str_trim(ID),
+    HLA_I = as.numeric(HLA_I),
+    HLA_I_label = ifelse(HLA_I == 1, "Positive", "Negative")
+  )
+
+# ==== 4. Assign anonymized IDs ====
+anon_map <- data.frame(
+  ID = sort(unique(dat$ID)),
+  AnonID = sprintf("H_%02d", seq_along(sort(unique(dat$ID))))
+)
+
+dat <- dat %>% left_join(anon_map, by = "ID")
+
+# ==== 5. Prepare data for plotting ====
+plot_df <- dat %>%
+  mutate(
+    HLA_I_label = factor(HLA_I_label, levels = c("Negative", "Positive"))
+  ) %>%
+  select(
+    AnonID,
+    HLA_I_label,
+    CD8_area_ROI = CD8_ROI
+  )
+
+# ==== 6. Color definition ====
+col_hlaI <- c(
+  "Positive" = "#0072B2",
+  "Negative" = "#4D4D4D"
+)
+
+# ==== 7. Bar plot ====
+p <- ggplot(
+  plot_df,
+  aes(x = AnonID, y = CD8_area_ROI, fill = HLA_I_label)
+) +
+  geom_col(
+    position = "dodge",
+    color = "black",
+    linewidth = 0.15
+  ) +
+  scale_fill_manual(values = col_hlaI, name = "HLA-I") +
+  xlab("Case ID") +
+  ylab("CD8 ROI area (arbitrary units)") +
+  theme_bw() +
+  theme(
+    text        = element_text(family = "Arial", size = 12, color = "black"),
+    axis.text   = element_text(color = "black"),
+    axis.title  = element_text(color = "black"),
+    axis.text.x = element_text(angle = 30, hjust = 1, vjust = 1)
+  )
+
+# ==== 8. Save figure ====
+ggsave(
+  filename = output_pdf,
+  plot     = p,
+  width    = 100,
+  height   = 110,
+  units    = "mm",
+  device   = cairo_pdf
+)
+
+# ==== 9. Statistical test ====
+wilcox.test(
+  CD8_area_ROI ~ HLA_I_label,
+  data = plot_df
+)
