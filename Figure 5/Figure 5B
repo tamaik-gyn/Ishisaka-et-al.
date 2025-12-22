@@ -1,0 +1,127 @@
+# ============================================================
+# Script: Fig6X_LOH_pie.R
+# Purpose: Pie charts of LOH status for HLA-A and B2M
+# Figure: Corresponding to Fig. 6 (panel X)
+# Journal: Cell Reports Medicine
+# ============================================================
+
+# ==== 1. Load required packages ====
+suppressPackageStartupMessages({
+  library(readxl)
+  library(dplyr)
+  library(ggplot2)
+  library(ggforce)
+})
+
+# ==== 2. File paths (relative paths) ====
+input_excel <- "data/LOH_data.xlsx"
+output_pdf_hlaa <- "figure/Fig6X_HLA_A_LOH_pie.pdf"
+output_pdf_b2m  <- "figure/Fig6X_B2M_LOH_pie.pdf"
+
+# ==== 3. Load data ====
+df <- read_excel(input_excel)
+
+# ==== 4. Normalize LOH labels ====
+df <- df %>%
+  mutate(
+    HLA_A_LOH = case_when(
+      HLA_A_LOH == "Ret" ~ "ROH",
+      TRUE ~ HLA_A_LOH
+    ),
+    B2M_7loci_LOH = case_when(
+      B2M_7loci_LOH == "Ret" ~ "ROH",
+      TRUE ~ B2M_7loci_LOH
+    )
+  )
+
+# ==== 5. Color definition ====
+col_loh <- c(
+  "ROH"  = "#7DBE3C",
+  "LOH"  = "#CC79A7",
+  "N.I." = "#6F6F6F"
+)
+
+# ==== 6. Pie chart function ====
+make_pie <- function(data, column, title) {
+  
+  plot_df <- data %>%
+    filter(!is.na(.data[[column]]), .data[[column]] != "") %>%
+    mutate(
+      LOH = factor(
+        .data[[column]],
+        levels = c("ROH", "LOH", "N.I.")
+      )
+    ) %>%
+    count(LOH, name = "n") %>%
+    mutate(
+      frac = n / sum(n),
+      angle_start = lag(cumsum(frac), default = 0) * 2 * pi,
+      angle_end   = cumsum(frac) * 2 * pi,
+      r0 = 0,
+      r  = 1
+    )
+  
+  ggplot(plot_df) +
+    geom_arc_bar(
+      aes(
+        x0 = 0, y0 = 0,
+        r0 = r0, r = r,
+        start = angle_start,
+        end   = angle_end,
+        fill  = LOH
+      ),
+      color = "black",
+      linewidth = 0.3
+    ) +
+    scale_fill_manual(
+      values = col_loh,
+      breaks = c("ROH", "LOH", "N.I.")
+    ) +
+    guides(
+      fill = guide_legend(
+        nrow = 3,
+        byrow = TRUE
+      )
+    ) +
+    coord_fixed() +
+    ggtitle(title) +
+    theme_void() +
+    theme(
+      plot.title = element_text(
+        size = 12,
+        family = "Arial",
+        hjust = 0.5
+      ),
+      legend.position = "bottom",
+      legend.title = element_blank(),
+      legend.text  = element_text(
+        size = 12,
+        family = "Arial"
+      ),
+      legend.spacing.y = unit(0, "pt")
+    )
+}
+
+# ==== 7. HLA-A LOH pie chart ====
+p_hlaa <- make_pie(df, "HLA_A_LOH", "HLA-A LOH Status")
+
+ggsave(
+  filename = output_pdf_hlaa,
+  plot     = p_hlaa,
+  width    = 60,
+  height   = 70,
+  units    = "mm",
+  device   = cairo_pdf
+)
+
+# ==== 8. B2M LOH pie chart ====
+p_b2m <- make_pie(df, "B2M_7loci_LOH", "B2M LOH Status")
+
+ggsave(
+  filename = output_pdf_b2m,
+  plot     = p_b2m,
+  width    = 60,
+  height   = 70,
+  units    = "mm",
+  device   = cairo_pdf
+)
