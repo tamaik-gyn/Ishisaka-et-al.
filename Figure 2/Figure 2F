@@ -64,7 +64,7 @@ p <- ggplot(
     )
   ) +
   xlab("HLA-I expression") +
-  ylab("log10(area_ROI)") +
+  ylab("log10(CD8 score)") +
   theme_bw() +
   theme(
     text        = element_text(family = "Arial", size = 12),
