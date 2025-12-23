@@ -1,7 +1,7 @@
 # ============================================================
-# Script: FigX_CD8_ROI_KM.R
+# Script: Fig1F_CD8_ROI_KM.R
 # Purpose: Kaplan–Meier analysis stratified by CD8 ROI status
-# Figure: Corresponding to Fig. X
+# Figure: Figure 1F
 # Journal: Cell Reports Medicine
 # ============================================================
 
@@ -18,8 +18,10 @@ font_add("Arial", regular = "/Library/Fonts/Arial.ttf")
 showtext_auto()
 
 # ==== 3. File paths (relative paths) ====
-input_excel <- "data/CD8_ROI_KM_data.xlsx"
-output_pdf  <- "figure/FigX_CD8_ROI_KM.pdf"
+# Note: The input Excel file is an internal master table
+# and is not directly provided in this repository.
+input_excel <- "data/survival_clinicopathological_master.xlsx"
+output_pdf  <- "figure/Fig1F_CD8_ROI_KM.pdf"
 
 # ==== 4. Load data ====
 data <- read_excel(input_excel)
@@ -57,17 +59,17 @@ p <- ggsurvplot(
 # ==== 8. Theme adjustments ====
 p$plot <- p$plot +
   theme(
-    axis.text   = element_text(family = "Arial", size = 12),
-    axis.title  = element_text(family = "Arial", size = 12),
-    legend.text = element_text(family = "Arial", size = 12),
+    axis.text    = element_text(family = "Arial", size = 12),
+    axis.title   = element_text(family = "Arial", size = 12),
+    legend.text  = element_text(family = "Arial", size = 12),
     legend.title = element_text(family = "Arial", size = 12)
   )
 
 p$table <- p$table +
   theme(
-    text       = element_text(family = "Arial", size = 12),
-    axis.text  = element_text(family = "Arial", size = 12),
-    axis.title = element_text(family = "Arial", size = 12)
+    text        = element_text(family = "Arial", size = 12),
+    axis.text   = element_text(family = "Arial", size = 12),
+    axis.title  = element_text(family = "Arial", size = 12)
   )
 
 # ==== 9. Save figure ====
