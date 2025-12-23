@@ -76,7 +76,7 @@ p <- ggplot(df, aes(x = CD8_filtration, y = log10_area_ROI, fill = CD8_filtratio
     "3" = "Infiltrated"
   )) +
   xlab("CD8 infiltration status") +
-  ylab("log10(area_ROI)") +
+  ylab("log10(CD8 score)") +
   theme_bw() +
   theme(
     text = element_text(size = 12, family = "Arial", color = "black"),
