@@ -1,7 +1,7 @@
 # ============================================================
-# Script: FigX_CD8_filtration_pie.R
-# Purpose: Generate CD8 filtration pie chart
-# Figure: Corresponding to Figure 1B in the manuscript
+# Script: Fig1B_CD8_filtration_pie.R
+# Purpose: Generate CD8 infiltration pie chart
+# Figure: Figure 1B
 # Journal: Cell Reports Medicine
 # ============================================================
 
@@ -14,12 +14,12 @@ suppressPackageStartupMessages({
 
 # ==== 2. File paths (relative paths) ====
 input_excel <- "data/CD8_filtration_data.xlsx"
-output_pdf  <- "figure/FigX_CD8_filtration_pie.pdf"
+output_pdf  <- "figure/Fig1B_CD8_filtration_pie.pdf"
 
 # ==== 3. Load data ====
 df <- read_excel(input_excel)
 
-# ==== 4. Aggregate CD8 filtration status ====
+# ==== 4. Aggregate CD8 infiltration status ====
 cd8_counts <- df %>%
   count(CD8_filtration) %>%
   mutate(
@@ -32,9 +32,9 @@ cd8_counts <- df %>%
 
 # ==== 5. Color definition ====
 col_cd8 <- c(
-  "Absent"       = "#325C9E",
-  "Excluded"     = "#AFC3DD",
-  "Infiltrated"  = "#D45E5E"
+  "Absent"      = "#325C9E",
+  "Excluded"    = "#AFC3DD",
+  "Infiltrated" = "#D45E5E"
 )
 
 # ==== 6. Pie chart ====
