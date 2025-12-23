@@ -1,7 +1,7 @@
 # ============================================================
-# Script: Fig6X_CD8_histology_stacked_bar.R
+# Script: Fig1D_CD8_histology_stacked_bar.R
 # Purpose: Stacked bar plot of CD8 infiltration by histology
-# Figure: Corresponding to Fig. 6 (panel X)
+# Figure: Figure 1D
 # Journal: Cell Reports Medicine
 # ============================================================
 
@@ -13,14 +13,17 @@ suppressPackageStartupMessages({
 })
 
 # ==== 2. File paths (relative paths) ====
-input_excel <- "data/Fig6A_oncoprint_data.xlsx"
-output_pdf  <- "figure/Fig6X_CD8_histology_stacked_bar.pdf"
+# Note: The input Excel file is a master clinicopathological table
+# and is not directly provided in this repository.
+input_excel <- "data/clinicopathological_master.xlsx"
+output_pdf  <- "figure/Fig1D_CD8_histology_stacked_bar.pdf"
 
 # ==== 3. Load data ====
 df_raw <- read_excel(input_excel)
 
 # ==== 4. Extract required columns ====
-# Column 3: CD8, Column 4: Histology
+# Column 3: CD8 infiltration status
+# Column 4: Histology
 dat_bar <- df_raw %>%
   transmute(
     CD8       = .[[3]],
@@ -38,9 +41,9 @@ dat_bar <- df_raw %>%
     Histology = factor(
       Histology,
       levels = c(
-        "EMG1/2","EMG3","Clear cell",
-        "Serous","Carcinosarcoma",
-        "Mixed","Others"
+        "EMG1/2", "EMG3", "Clear cell",
+        "Serous", "Carcinosarcoma",
+        "Mixed", "Others"
       )
     )
   )
@@ -65,10 +68,10 @@ p_bar <- ggplot(dat_bar, aes(x = Histology, fill = CD8)) +
   ylab("Proportion of CD8 infiltration") +
   theme_bw() +
   theme(
-    text        = element_text(family = "Arial", size = 12, color = "black"),
-    axis.title  = element_text(size = 12),
-    axis.text   = element_text(size = 12),
-    axis.text.x = element_text(angle = 35, hjust = 1),
+    text         = element_text(family = "Arial", size = 12, color = "black"),
+    axis.title   = element_text(size = 12),
+    axis.text    = element_text(size = 12),
+    axis.text.x  = element_text(angle = 35, hjust = 1),
     legend.title = element_text(size = 12),
     legend.text  = element_text(size = 12)
   )
