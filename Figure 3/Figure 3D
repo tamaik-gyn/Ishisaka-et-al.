@@ -84,7 +84,7 @@ p <- ggplot(df, aes(x = HLA_status, y = log10_area, fill = HLA_status)) +
     size = 6
   ) +
   xlab("HLA-I status") +
-  ylab("log10(CD8 ROI area)") +
+  ylab("log10(CD8 score)") +
   theme_bw() +
   theme(
     text       = element_text(family = "Arial", size = 12),
