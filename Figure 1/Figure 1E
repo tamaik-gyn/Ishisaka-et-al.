@@ -1,7 +1,7 @@
 # ============================================================
-# Script: Fig6X_CD8_molecular_subtype_stacked_bar.R
+# Script: Fig1E_CD8_molecular_subtype_stacked_bar.R
 # Purpose: Stacked bar plot of CD8 infiltration by molecular subtype
-# Figure: Corresponding to Fig. 6 (panel X)
+# Figure: Figure 1E
 # Journal: Cell Reports Medicine
 # ============================================================
 
@@ -13,14 +13,17 @@ suppressPackageStartupMessages({
 })
 
 # ==== 2. File paths (relative paths) ====
-input_excel <- "data/Fig6A_oncoprint_data.xlsx"
-output_pdf  <- "figure/Fig6X_CD8_molecular_subtype_stacked_bar.pdf"
+# Note: The input Excel file is a master clinicopathological table
+# and is not directly provided in this repository.
+input_excel <- "data/clinicopathological_master.xlsx"
+output_pdf  <- "figure/Fig1E_CD8_molecular_subtype_stacked_bar.pdf"
 
 # ==== 3. Load data ====
 df_raw <- read_excel(input_excel)
 
 # ==== 4. Extract required columns ====
-# Column 2: Molecular_Subtype, Column 3: CD8
+# Column 2: Molecular subtype
+# Column 3: CD8 infiltration status
 dat_bar <- df_raw %>%
   transmute(
     Molecular_Subtype = .[[2]],
@@ -61,10 +64,10 @@ p_bar <- ggplot(dat_bar, aes(x = Molecular_Subtype, fill = CD8)) +
   ylab("Proportion of CD8 infiltration") +
   theme_bw() +
   theme(
-    text        = element_text(family = "Arial", size = 12, color = "black"),
-    axis.title  = element_text(size = 12),
-    axis.text   = element_text(size = 12),
-    axis.text.x = element_text(angle = 30, hjust = 1),
+    text         = element_text(family = "Arial", size = 12, color = "black"),
+    axis.title   = element_text(size = 12),
+    axis.text    = element_text(size = 12),
+    axis.text.x  = element_text(angle = 30, hjust = 1),
     legend.title = element_text(size = 12),
     legend.text  = element_text(size = 12)
   )
@@ -80,6 +83,7 @@ ggsave(
 )
 
 # ==== 8. Statistical test ====
+# Fisher's exact test with Monte Carlo simulation
 tab_subtype_cd8 <- table(dat_bar$Molecular_Subtype, dat_bar$CD8)
 
 fisher_res <- fisher.test(
