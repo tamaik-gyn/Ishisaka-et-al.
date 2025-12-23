@@ -1,7 +1,7 @@
 # ============================================================
-# Script: FigX_CD8_boxplot.R
-# Purpose: Boxplot of CD8 filtration vs log10(area_ROI)
-# Figure: Corresponding to Figure 1C in the manuscript
+# Script: Fig1C_CD8_boxplot.R
+# Purpose: Boxplot of CD8 infiltration status vs log10(area_ROI)
+# Figure: Figure 1C
 # Journal: Cell Reports Medicine
 # ============================================================
 
@@ -15,9 +15,9 @@ suppressPackageStartupMessages({
 })
 
 # ==== 2. File paths (relative paths) ====
-input_excel <- "data/CD8_boxplot_data.xlsx"
-output_pdf_main <- "figure/FigX_CD8_boxplot.pdf"
-output_pdf_dunn <- "figure/FigX_CD8_boxplot_Dunn.pdf"
+input_excel      <- "data/CD8_boxplot_data.xlsx"
+output_pdf_main  <- "figure/Fig1C_CD8_boxplot.pdf"
+output_pdf_dunn  <- "figure/Fig1C_CD8_boxplot_Dunn.pdf"
 
 # ==== 3. Load data ====
 df <- read_excel(input_excel)
@@ -70,13 +70,17 @@ p <- ggplot(df, aes(x = CD8_filtration, y = log10_area_ROI, fill = CD8_filtratio
   geom_boxplot(outlier.shape = NA) +
   geom_jitter(width = 0.2, alpha = 0.8, size = 1.8) +
   scale_fill_manual(values = cd8_colors) +
-  scale_x_discrete(labels = c("1" = "Absent", "2" = "Excluded", "3" = "Infiltrated")) +
+  scale_x_discrete(labels = c(
+    "1" = "Absent",
+    "2" = "Excluded",
+    "3" = "Infiltrated"
+  )) +
   xlab("CD8 infiltration status") +
   ylab("log10(area_ROI)") +
   theme_bw() +
   theme(
     text = element_text(size = 12, family = "Arial", color = "black"),
-    axis.text = element_text(size = 12),
+    axis.text  = element_text(size = 12),
     axis.title = element_text(size = 12),
     legend.position = "none"
   )
