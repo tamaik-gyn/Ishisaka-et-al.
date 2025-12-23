@@ -62,7 +62,7 @@ p <- ggplot(
   ) +
   scale_fill_manual(values = col_hlaI, name = "HLA-I") +
   xlab("Case ID") +
-  ylab("CD8 ROI area (arbitrary units)") +
+  ylab("CD8 score") +
   theme_bw() +
   theme(
     text        = element_text(family = "Arial", size = 12, color = "black"),
