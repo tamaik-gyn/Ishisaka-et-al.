@@ -1,7 +1,7 @@
 # ============================================================
-# Script: FigX_HLA_filtration_pie.R
-# Purpose: Pie chart of HLA-I expression status
-# Figure: Corresponding to Fig. X
+# Script: Figure2B_HLA_filtration_pie.R
+# Purpose: Generate HLA-I expression status pie chart
+# Figure: Figure 2B
 # Journal: Cell Reports Medicine
 # ============================================================
 
@@ -14,7 +14,7 @@ suppressPackageStartupMessages({
 
 # ==== 2. File paths (relative paths) ====
 input_excel <- "data/HLA_filtration_data.xlsx"
-output_pdf  <- "figure/FigX_HLA_filtration_pie.pdf"
+output_pdf  <- "figure/Figure2B_HLA_filtration_pie.pdf"
 
 # ==== 3. Load data ====
 df <- read_excel(input_excel)
@@ -32,9 +32,9 @@ hla_counts <- df %>%
 
 # ==== 5. Color definition ====
 col_hlaI <- c(
-  "Positive"       = "#0072B2",
+  "Negative"       = "#4D4D4D",
   "Heterogeneous"  = "#E69F00",
-  "Negative"       = "#4D4D4D"
+  "Positive"       = "#0072B2"
 )
 
 # ==== 6. Pie chart ====
