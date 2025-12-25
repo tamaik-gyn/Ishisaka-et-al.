@@ -1,7 +1,7 @@
 # ============================================================
-# Script: Fig6X_CD8_HLA_boxplot.R
+# Script: Figure2F_CD8_HLA_boxplot.R
 # Purpose: Boxplot of log10(area_ROI) stratified by HLA-I expression
-# Figure: Corresponding to Fig. 6 (panel X)
+# Figure: Figure 2F
 # Journal: Cell Reports Medicine
 # ============================================================
 
@@ -16,8 +16,8 @@ suppressPackageStartupMessages({
 
 # ==== 2. File paths (relative paths) ====
 input_excel <- "data/CD8_HLA_boxplot_data.xlsx"
-output_pdf_main <- "figure/Fig6X_CD8_HLA_boxplot.pdf"
-output_pdf_dunn <- "figure/Fig6X_CD8_HLA_boxplot_Dunn.pdf"
+output_pdf_main <- "figure/Figure2F_CD8_HLA_boxplot.pdf"
+output_pdf_dunn <- "figure/Figure2F_CD8_HLA_boxplot_Dunn.pdf"
 
 # ==== 3. Load data ====
 df <- read_excel(input_excel)
