@@ -1,7 +1,7 @@
 # ============================================================
-# Script: Fig6X_HLA_molecular_subtype_stacked_bar.R
+# Script: Figure2D_HLA_molecular_subtype_stacked_bar.R
 # Purpose: Stacked bar plot of HLA-I expression by molecular subtype
-# Figure: Corresponding to Fig. 6 (panel X)
+# Figure: Figure 2D
 # Journal: Cell Reports Medicine
 # ============================================================
 
@@ -14,7 +14,7 @@ suppressPackageStartupMessages({
 
 # ==== 2. File paths (relative paths) ====
 input_excel <- "data/Fig6A_oncoprint_data.xlsx"
-output_pdf  <- "figure/Fig6X_HLA_molecular_subtype_stacked_bar.pdf"
+output_pdf  <- "figure/Figure2D_HLA_molecular_subtype_stacked_bar.pdf"
 
 # ==== 3. Load data ====
 df_raw <- read_excel(input_excel)
