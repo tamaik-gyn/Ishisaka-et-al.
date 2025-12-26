@@ -1,7 +1,7 @@
 # ============================================================
-# Script: Fig6X_B2M_LOH_KM.R
+# Script: Figure5H_B2M_LOH_KM.R
 # Purpose: Kaplan–Meier analysis stratified by B2M LOH status
-# Figure: Corresponding to Fig. 6 (panel X)
+# Figure: Figure 5H
 # Journal: Cell Reports Medicine
 # ============================================================
 
@@ -19,7 +19,7 @@ showtext_auto()
 
 # ==== 3. File paths (relative paths) ====
 input_excel <- "data/B2M_LOH_KM_data.xlsx"
-output_pdf  <- "figure/Fig6X_B2M_LOH_KM.pdf"
+output_pdf  <- "figure/Figure5H_B2M_LOH_KM.pdf"
 
 # ==== 4. Load data ====
 data <- read_excel(input_excel)
@@ -57,9 +57,9 @@ p <- ggsurvplot(
 # ==== 8. Theme adjustments ====
 p$plot <- p$plot +
   theme(
-    axis.text   = element_text(family = "Arial", size = 12),
-    axis.title  = element_text(family = "Arial", size = 12),
-    legend.text = element_text(family = "Arial", size = 12),
+    axis.text    = element_text(family = "Arial", size = 12),
+    axis.title   = element_text(family = "Arial", size = 12),
+    legend.text  = element_text(family = "Arial", size = 12),
     legend.title = element_text(family = "Arial", size = 12)
   )
 
