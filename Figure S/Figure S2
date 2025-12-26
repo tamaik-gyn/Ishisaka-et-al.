@@ -1,6 +1,7 @@
 # ============================================================
-# Script: FigSx_HLA_methylation_histogram_KDE.R
+# Script: FigureS2_HLA_methylation_histogram_KDE.R
 # Purpose: Histogram and kernel density estimation of HLA-A methylation levels
+# Figure: Figure S2
 # Journal: Cell Reports Medicine
 # ============================================================
 
@@ -104,8 +105,10 @@ if (length(local_min) > 0) {
     ) +
     geom_text(
       data = data.frame(x = local_min, y = y_min),
-      aes(x = x, y = y,
-          label = sprintf("%.2f", x)),
+      aes(
+        x = x, y = y,
+        label = sprintf("%.2f", x)
+      ),
       vjust = -1.2,
       color = "red",
       family = "Arial",
@@ -118,7 +121,7 @@ if (length(local_min) > 0) {
 
 # ==== 10. Save figures (A5 landscape) ====
 ggsave(
-  filename = file.path(output_dir, "FigSx_HLA_histogram_KDE.pdf"),
+  filename = file.path(output_dir, "FigureS2_HLA_histogram_KDE.pdf"),
   plot     = p_base,
   width    = 8.27,
   height   = 5.83,
@@ -126,7 +129,7 @@ ggsave(
 )
 
 ggsave(
-  filename = file.path(output_dir, "FigSx_HLA_histogram_KDE_with_minima.pdf"),
+  filename = file.path(output_dir, "FigureS2_HLA_histogram_KDE_with_minima.pdf"),
   plot     = p_min,
   width    = 8.27,
   height   = 5.83,
@@ -150,6 +153,6 @@ report_txt <- paste0(
 
 writeLines(
   report_txt,
-  con = file.path(output_dir, "FigSx_HLA_KDE_minima_report.txt"),
+  con = file.path(output_dir, "FigureS2_HLA_KDE_minima_report.txt"),
   useBytes = TRUE
 )
