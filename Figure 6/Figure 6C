@@ -1,6 +1,7 @@
 # ============================================================
-# Script: Fig6X_B2M_LOH_nested_pies.R
+# Script: Figure6C_B2M_LOH_nested_pies.R
 # Purpose: Nested pie charts (Subtype → B2M LOH → outer ring)
+# Figure: Figure 6C
 # Journal: Cell Reports Medicine
 # ============================================================
 
@@ -17,7 +18,7 @@ suppressPackageStartupMessages({
 
 # ==== 2. File paths (relative paths) ====
 input_excel <- "data/Fig6A_oncoprint_data.xlsx"
-output_pdf  <- "figure/Fig6X_B2M_LOH_nested_pies.pdf"
+output_pdf  <- "figure/Figure6C_B2M_LOH_nested_pies.pdf"
 
 # ==== 3. Load and preprocess data ====
 dat <- read_excel(input_excel) %>%
@@ -38,8 +39,10 @@ dat <- dat %>%
   mutate(
     Molecular_Subtype = factor(Molecular_Subtype, levels = sub_levels),
     B2M_LOH           = factor(B2M_LOH, levels = c("ROH", "LOH")),
-    CD8               = factor(CD8,
-                               levels = c("Absent", "Excluded", "Infiltrated"))
+    CD8               = factor(
+      CD8,
+      levels = c("Absent", "Excluded", "Infiltrated")
+    )
   )
 
 # ==== 4. Prepare pie chart data ====
@@ -64,9 +67,11 @@ mid_df <- dat %>%
   ungroup() %>%
   left_join(
     center_df %>%
-      select(Molecular_Subtype,
-             sub_start = angle_start,
-             sub_end   = angle_end),
+      select(
+        Molecular_Subtype,
+        sub_start = angle_start,
+        sub_end   = angle_end
+      ),
     by = "Molecular_Subtype"
   ) %>%
   group_by(Molecular_Subtype) %>%
@@ -123,17 +128,19 @@ dummy_cd8 <- data.frame(
 
 # ==== 6. Plot ====
 p <- ggplot() +
-  
+
   # ---- Center: Subtype ----
-geom_arc_bar(
-  data = center_df,
-  aes(x0 = 0, y0 = 0,
+  geom_arc_bar(
+    data = center_df,
+    aes(
+      x0 = 0, y0 = 0,
       r0 = r0, r = r,
       start = angle_start, end = angle_end,
-      fill = Molecular_Subtype),
-  color = "grey40",
-  linewidth = 0.3
-) +
+      fill = Molecular_Subtype
+    ),
+    color = "grey40",
+    linewidth = 0.3
+  ) +
   scale_fill_manual(
     name   = "Subtype",
     values = col_subtype,
@@ -142,19 +149,21 @@ geom_arc_bar(
       override.aes = list(colour = NA)
     )
   ) +
-  
+
   ggnewscale::new_scale_fill() +
-  
+
   # ---- Middle ring: B2M LOH ----
-geom_arc_bar(
-  data = mid_df,
-  aes(x0 = 0, y0 = 0,
+  geom_arc_bar(
+    data = mid_df,
+    aes(
+      x0 = 0, y0 = 0,
       r0 = r0, r = r,
       start = angle_start, end = angle_end,
-      fill = B2M_LOH),
-  color = "grey40",
-  linewidth = 0.3
-) +
+      fill = B2M_LOH
+    ),
+    color = "grey40",
+    linewidth = 0.3
+  ) +
   scale_fill_manual(
     name   = "B2M LOH",
     values = col_b2m,
@@ -163,15 +172,15 @@ geom_arc_bar(
       override.aes = list(colour = NA)
     )
   ) +
-  
+
   ggnewscale::new_scale_fill() +
-  
+
   # ---- CD8 legend only ----
-geom_rect(
-  data = dummy_cd8,
-  aes(xmin = 0, xmax = 1, ymin = 0, ymax = 1, fill = CD8),
-  alpha = 0
-) +
+  geom_rect(
+    data = dummy_cd8,
+    aes(xmin = 0, xmax = 1, ymin = 0, ymax = 1, fill = CD8),
+    alpha = 0
+  ) +
   scale_fill_manual(
     name   = "CD8",
     values = col_cd8,
@@ -180,38 +189,43 @@ geom_rect(
       override.aes = list(colour = NA, alpha = 1)
     )
   ) +
-  
+
   # ---- Outer boundary ----
-geom_arc_bar(
-  data = outer_ring_df,
-  aes(x0 = 0, y0 = 0,
+  geom_arc_bar(
+    data = outer_ring_df,
+    aes(
+      x0 = 0, y0 = 0,
       r0 = r0, r = r,
-      start = angle_start, end = angle_end),
-  fill = NA,
-  color = "grey40",
-  linewidth = 0.4
-) +
-  
+      start = angle_start, end = angle_end
+    ),
+    fill = NA,
+    color = "grey40",
+    linewidth = 0.4
+  ) +
+
   # ---- Mask outer edge ----
-geom_arc_bar(
-  data = data.frame(
-    x0 = 0, y0 = 0,
-    r0 = 1.19, r = 1.21,
-    start = 0, end = 2 * pi
-  ),
-  aes(x0 = x0, y0 = y0, r0 = r0, r = r, start = start, end = end),
-  fill = "white",
-  color = NA
-) +
-  
+  geom_arc_bar(
+    data = data.frame(
+      x0 = 0, y0 = 0,
+      r0 = 1.19, r = 1.21,
+      start = 0, end = 2 * pi
+    ),
+    aes(x0 = x0, y0 = y0, r0 = r0, r = r, start = start, end = end),
+    fill = "white",
+    color = NA
+  ) +
+
   # ---- Subtype boundaries ----
-geom_segment(
-  data = boundary_df,
-  aes(x = x_start, y = y_start, xend = x_end, yend = y_end),
-  color = "grey20",
-  linewidth = 1
-) +
-  
+  geom_segment(
+    data = boundary_df,
+    aes(
+      x = x_start, y = y_start,
+      xend = x_end, yend = y_end
+    ),
+    color = "grey20",
+    linewidth = 1
+  ) +
+
   coord_fixed() +
   theme_void() +
   theme(
