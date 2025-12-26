@@ -1,7 +1,7 @@
 # ============================================================
-# Script: FigX_HLAI_CD8_barplot.R
+# Script: Figure3C_HLAI_CD8_barplot.R
 # Purpose: Bar plot of CD8 ROI area stratified by HLA-I status
-# Figure: Corresponding to Fig. X
+# Figure: Figure 3C
 # Journal: Cell Reports Medicine
 # ============================================================
 
@@ -15,7 +15,7 @@ suppressPackageStartupMessages({
 
 # ==== 2. File paths (relative paths) ====
 input_excel <- "data/HLAhetero_CD8_data.xlsx"
-output_pdf  <- "figure/FigX_HLAI_CD8_barplot.pdf"
+output_pdf  <- "figure/Figure3C_HLAI_CD8_barplot.pdf"
 
 # ==== 3. Load data ====
 dat <- read_excel(input_excel) %>%
