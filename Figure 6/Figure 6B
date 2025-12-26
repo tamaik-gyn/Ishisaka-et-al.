@@ -1,6 +1,7 @@
 # ============================================================
-# Script: Fig6X_HLAI_nested_pies.R
+# Script: Figure6B_HLAI_nested_pies.R
 # Purpose: Nested pie charts showing Molecular Subtype and HLA-I status
+# Figure: Figure 6B
 # Journal: Cell Reports Medicine
 # ============================================================
 
@@ -16,7 +17,7 @@ suppressPackageStartupMessages({
 
 # ==== 2. File paths (relative paths) ====
 input_excel <- "data/Fig6A_oncoprint_data.xlsx"
-output_pdf  <- "figure/Fig6X_HLAI_nested_pies.pdf"
+output_pdf  <- "figure/Figure6B_HLAI_nested_pies.pdf"
 
 # ==== 3. Load and preprocess data ====
 dat <- read_excel(input_excel) %>%
@@ -35,8 +36,10 @@ dat <- dat %>%
   ) %>%
   mutate(
     Molecular_Subtype = factor(Molecular_Subtype, levels = sub_levels),
-    HLA_I             = factor(HLA_I,
-                               levels = c("Positive", "Heterogeneous", "Negative"))
+    HLA_I             = factor(
+      HLA_I,
+      levels = c("Positive", "Heterogeneous", "Negative")
+    )
   )
 
 # ==== 4. Prepare pie chart data ====
