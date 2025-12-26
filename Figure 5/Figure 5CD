@@ -1,7 +1,7 @@
 # ============================================================
-# Script: Fig6X_Subtype_LOH_stacked_bar.R
+# Script: Figure5CD_Subtype_LOH_stacked_bar.R
 # Purpose: Stacked bar plots of LOH status by molecular subtype (HLA-A and B2M)
-# Figure: Corresponding to Fig. 6 (panel X)
+# Figure: Figure 5C (HLA-A) and Figure 5D (B2M)
 # Journal: Cell Reports Medicine
 # ============================================================
 
@@ -14,9 +14,9 @@ suppressPackageStartupMessages({
 })
 
 # ==== 2. File paths (relative paths) ====
-input_excel   <- "data/LOH_data.xlsx"
-output_pdf_A  <- "figure/Fig6X_Subtype_HLA_A_LOH.pdf"
-output_pdf_B2M <- "figure/Fig6X_Subtype_B2M_LOH.pdf"
+input_excel    <- "data/LOH_data.xlsx"
+output_pdf_A   <- "figure/Figure5C_Subtype_HLA_A_LOH.pdf"
+output_pdf_B2M <- "figure/Figure5D_Subtype_B2M_LOH.pdf"
 
 # ==== 3. Load data ====
 df <- read_excel(input_excel)
