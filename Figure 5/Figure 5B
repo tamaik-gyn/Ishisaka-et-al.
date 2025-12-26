@@ -1,7 +1,7 @@
 # ============================================================
-# Script: Fig6X_LOH_pie.R
+# Script: Figure5B_LOH_pie.R
 # Purpose: Pie charts of LOH status for HLA-A and B2M
-# Figure: Corresponding to Fig. 6 (panel X)
+# Figure: Figure 5B
 # Journal: Cell Reports Medicine
 # ============================================================
 
@@ -15,8 +15,8 @@ suppressPackageStartupMessages({
 
 # ==== 2. File paths (relative paths) ====
 input_excel <- "data/LOH_data.xlsx"
-output_pdf_hlaa <- "figure/Fig6X_HLA_A_LOH_pie.pdf"
-output_pdf_b2m  <- "figure/Fig6X_B2M_LOH_pie.pdf"
+output_pdf_hlaa <- "figure/Figure5B_HLA_A_LOH_pie.pdf"
+output_pdf_b2m  <- "figure/Figure5B_B2M_LOH_pie.pdf"
 
 # ==== 3. Load data ====
 df <- read_excel(input_excel)
