@@ -1,7 +1,7 @@
 # ============================================================
-# Script: FigX_HLAI_paired_boxplot.R
+# Script: Figure3D_HLAI_paired_boxplot.R
 # Purpose: Paired boxplot of log10(CD8 ROI area) by HLA-I status
-# Figure: Corresponding to Fig. X
+# Figure: Figure 3D
 # Journal: Cell Reports Medicine
 # ============================================================
 
@@ -16,7 +16,7 @@ suppressPackageStartupMessages({
 
 # ==== 2. File paths (relative paths) ====
 input_excel <- "data/HLAhetero_CD8_data.xlsx"
-output_pdf  <- "figure/FigX_HLAI_paired_boxplot.pdf"
+output_pdf  <- "figure/Figure3D_HLAI_paired_boxplot.pdf"
 
 # ==== 3. Load and preprocess data ====
 df <- read_excel(input_excel) %>%
