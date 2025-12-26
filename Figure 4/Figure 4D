@@ -1,7 +1,7 @@
 # ============================================================
-# Script: Fig6X_HLAA_methylation_CD8_stacked_bar.R
+# Script: Figure4D_HLAA_methylation_CD8_stacked_bar.R
 # Purpose: Stacked bar plot of CD8 infiltration by HLA-A methylation status
-# Figure: Corresponding to Fig. 6 (panel X)
+# Figure: Figure 4D
 # Journal: Cell Reports Medicine
 # ============================================================
 
@@ -15,7 +15,7 @@ suppressPackageStartupMessages({
 
 # ==== 2. File paths (relative paths) ====
 input_excel <- "data/Fig6A_oncoprint_data.xlsx"
-output_pdf  <- "figure/Fig6X_HLAA_methylation_CD8_stacked_bar.pdf"
+output_pdf  <- "figure/Figure4D_HLAA_methylation_CD8_stacked_bar.pdf"
 
 # ==== 3. Load data ====
 df <- read_excel(input_excel)
